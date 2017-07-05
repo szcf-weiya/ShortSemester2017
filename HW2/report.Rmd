@@ -1,0 +1,92 @@
+---
+title: "短学期作业二"
+author: "汪利军 3140105707"
+date: "July 5, 2017"
+fontsize: 12pt
+output: 
+  pdf_document:
+    includes:
+      in_header: ~/header_zh.tex
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+---
+
+# Problem 5.1
+```{r}
+c(1,4)*c(2,3)
+```
+# Problem 5.4
+```{r}
+Gender = c('M', 'F')
+Weight = c(80, 60)
+Eyes = c('Blue', 'Green')
+Height = c(180, 160)
+X = data.frame(Gender, Weight)
+Y = data.frame(Eyes, Height)
+rownames(X) = c('Jack', 'Julia')
+rownames(Y) = c('Jack', 'Julia')
+## merge
+merge(X, Y, by = "row.names")
+```
+# Problem 5.11
+```{r}
+weight = c(79, 90, 87, 63, 90, 71, 58, 80, 91, 89)
+height = c(163, 163, 198, 164, 168, 178, 191, 194, 185, 176)
+gender = c('M', 'F', 'M', 'F', 'F', 'F', 'M', 'F', 'F', 'M')
+x = data.frame(weight, height, gender)
+```
+
+outputs the weights and heights of all women
+```{r}
+x[x$gender == 'F', c(1,2)]
+```
+# Problem 5.12
+```{r}
+(1:3)[any(c(T, F, T))]
+(1:3)[all(c(T, F, T))]
+```
+
+# Problem 5.13
+```{r}
+c(T, T, F) | c(F, T, F)
+c(T, T, F) || c(F, T, F)
+```
+# Problem 5.15
+```{r}
+paste(c("a", "b"), c("c", "d"), collapse = "", sep = "")
+```
+# Chapter 5 Worksheet B
+读取数据
+```{r}
+library(XLConnect)
+connect <- loadWorkbook('Infarction.xls')
+data <- readWorksheet(connect, 1)
+```
+## Problem 5.1
+注意到表格中缺失值为"."，为方便后续处理，先将"."赋值为NA。值得说明的是，为了让data能在sapply中进行更新，采用了"<<-"运算符，而非"<-"，这样data数据集中的"."重新赋值为了NA
+```{r}
+res = sapply(1:nrow(data), function(i) data[i, data[i, ] == '.'] <<- NA)
+```
+则包含缺失值的行为
+```{r}
+which(!complete.cases(data))
+```
+
+## Problem 5.2
+```{r}
+row.missing.count = sapply(1:nrow(data), function(i) sum(is.na(data[i,])))
+##超过一个缺失值的行
+which(row.missing.count>1)
+```
+## Problem 5.3
+包含缺失值的列名为
+```{r}
+colnames(data)[which(sapply(1:ncol(data), function(i) sum(is.na(data[i]))) > 0)]
+```
+
+## Problem 5.4
+通过complete.cases()进行删掉含缺失值的行
+```{r}
+data.rm.missing = data[complete.cases(data),]
+```
