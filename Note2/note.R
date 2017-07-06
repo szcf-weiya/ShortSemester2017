@@ -76,3 +76,15 @@ plot(ohms ~ juice, xlab="Apparent juice content (%)",
 ## Add a smooth curve, as in Panel B
 with(fruitohms, lines(lowess(juice, ohms), lwd=2))
 # With lwd=2, the curve is twice the default thickness
+
+## What is the appropriate scale?
+## The following omits the labeling information
+oldpar <- par(mfrow = c(1,2), pty="s")
+## Plot brain vs body: data frame Animals (MASS package)
+library(MASS)
+plot(brain ~ body, data=Animals) # Panel A
+plot(log(brain) ~ log(body), data=Animals) # Panel B
+par(oldpar)
+
+## Patterns in grouped data – lengths of cuckoo eggs
+
