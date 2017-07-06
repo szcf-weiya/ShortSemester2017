@@ -1,0 +1,30 @@
+---
+title: "短学期作业二"
+author: "汪利军 3140105707"
+date: "July 5, 2017"
+fontsize: 12pt
+output: 
+  pdf_document:
+    includes:
+      in_header: ../header_zh.tex
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+---
+
+# MB 2.1
+```{r}
+
+```
+
+# MB 2.2
+
+# MB 2.3
+
+# MB 2.5
+
+# MB 2.9
+
+# MB 2.13
+
+# MDL Chapter 7 Worksheet C
