@@ -88,3 +88,25 @@ par(oldpar)
 
 ## Patterns in grouped data – lengths of cuckoo eggs
 
+## Compare stripplot() with bwplot(), both from lattice package
+stripplot(species ~ length, xlab="Length of egg (mm)", data=cuckoos)
+bwplot(species ~ length, xlab="Length of egg (mm)", data=cuckoos,
+       scales=list(y=list(alternating=0)))
+# alternating=0; omit y-axis labels
+
+## Comparing densities between groups – lattice style density plots
+## Density plot for earconch: data frame possum (DAAG package)
+library(lattice)
+densityplot(~earconch | sex, groups=Pop, data=possum,
+            auto.key=list(space="right"))
+
+
+## Apply function range to columns of data frame jobs (DAAG)
+sapply(jobs, range)
+
+## Simplified plot; all series in a single panel; use log scale
+(simplejobsA.xyplot <-
+    xyplot(Ontario+Quebec+BC+Alberta+Prairies+Atlantic  ~ Date,
+           outer=FALSE, data=jobs, type="b",
+           ylab="Number of workers", scales=list(y=list(log="e")),
+           auto.key=list(space="right", lines=TRUE)))

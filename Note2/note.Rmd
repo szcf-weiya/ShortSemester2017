@@ -1,0 +1,93 @@
+---
+title: "note"
+author: "weiya 3140105707"
+date: "July 6, 2017"
+output: pdf_document
+---
+
+# Data Summary
+
+## Counts
+
+?????????????????????????????????????????????????????????????????
+```{r}
+d.patho <- addNA(c(1,NA,1:2,1:3))[-7]; is.na(d.patho) <- 3:4
+table(d.patho)                   # counts the "unusual" NA
+table(d.patho, useNA = "ifany")  # counts all three
+```
+
+```{r}
+## Table of counts example: data frame nswpsid1 (DAAG)
+tab <- with(nswpsid1, table(trt, nodeg, useNA="ifany"))
+dimnames(tab) <- list(trt=c("none", "training"), educ = c("completed", "dropout"))
+```
+
+### Addition over one or more margins of a table
+```{r}
+stones <- array(c(81,6,234,36,192,71,55,25), dim=c(2,2,2),
+                dimnames=list(Success=c("yes","no"),
+                              Method=c("open","ultrasound"),
+                              Size=c("<2cm", ">=2cm")))
+library(vcd)
+mosaic(stones, sort=3:1) # c.f. mosaicplot() in base graphics
+# Re-ordering the margins gives a more interpretable plot.
+```
+
+```{r}
+## Function to calculate percentage success rates
+roundpc <- function(x)round(100*x[1]/sum(x), 1)
+## Add "%Yes" to margin 1 (Success) of the table
+stonesplus <- addmargins(stones, margin=1, FUN=c("%Yes"=roundpc))
+## Print table, use layout similar to that shown alongside plot
+ftable(stonesplus, col.vars=1)
+## Get sum for each margin 1,2 combination; i.e., sum over margin 3
+stones12 <- margin.table(stones, margin=c(1,2))
+stones12plus <- addmargins(stones12, margin=1, FUN=c("%Yes"=roundpc))
+ftable(stones12plus, col.vars=1) # Table based on sums over Size
+```
+
+### Tabulation that accounts for frequencies or weights – the xtabs() function
+
+```{r}
+(Atab <- xtabs(weight  ~ airbag + dead, data=nassCDS))
+```
+
+```{r}
+roundpc2 <- function(x)round(100*x[2]/sum(x), 2)
+addmargins(Atab, margin=2, FUN=c("%Dead"=roundpc2))
+```
+
+```{r}
+SAtab <- xtabs(weight ~ seatbelt + airbag + dead, data=nassCDS)
+ftable(addmargins(SAtab, margin=3, FUN=c("%Dead"=roundpc2)), col.vars=3)
+```
+
+
+```{r}
+FSAtab <- xtabs(weight ~ dvcat + seatbelt + airbag + dead, data=nassCDS)
+ftable(addmargins(FSAtab, margin=4, FUN=c("%Dead"=roundpc2)), col.vars=4)
+```
+
+## Summaries of information from data frames
+```{r}
+
+```
+
+### Summary as a prelude to analysis – aggregate()
+```{r}
+## mean yield by block by shade: data frame kiwishade (DAAG)
+kiwimeans <- with(kiwishade, aggregate(yield, by=list(block, shade), mean))
+names(kiwimeans) <- c("block","shade","meanyield")
+head(kiwimeans, 4)
+```
+
+### Correlation
+```{r}
+## Correlation between body and brain: data frame Animals (MASS)
+## Product--moment correlation
+with(Animals, cor(body, brain))
+## Product--moment correlation, after log transformation
+with(log(Animals), cor(body, brain))
+## Spearman rank correlation
+with(Animals, cor(body, brain, method="spearman"))
+```
