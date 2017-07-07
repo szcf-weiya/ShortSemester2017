@@ -1,0 +1,28 @@
+---
+title: "短学期作业四"
+author: "汪利军 3140105707"
+date: "July 7, 2017"
+fontsize: 12pt
+output: 
+  pdf_document:
+    includes:
+      in_header: ../header_zh.tex
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+---
+
+# MB 3.4
+
+# MB 3.7
+
+# MB 3.9
+
+# MB 3.11
+
+# MB 3.13
+
+# MDL Chapter 10 Worksheet A
+
+
+# MDL Chapter 12 Worksheet B 

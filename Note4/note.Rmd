@@ -1,0 +1,137 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(DAAG)
+```
+
+# Statistical models
+
+## Incorporation of an error or noise component
+
+## Fitting models – the model formula
+
+```{r}
+## Fit line - by default, this fits intercept & slope.
+## requires data frame roller (DAAG)
+roller.lm <- lm(depression  ~  weight, data=roller)
+## Compare with the code used to plot the data
+plot(depression ~ weight, data=roller)
+## Add the fitted line to the plot
+abline(roller.lm)
+```
+
+# Distributions: models for the random component
+
+```{r}
+## To get labeled output exactly as below, see the footnote
+dbinom(0:2, size=2, prob=0.5)
+## determine such cumulative probabilities
+pbinom(q = 1, size = 4, prob = 0.9)
+qbinom(p = 0.70, size = 4, prob = 0.5)
+```
+
+```{r}
+dpois(x = 0:4, lambda = 3)
+ppois(q = 0:4, lambda = 3)
+```
+
+```{r}
+## Plot the normal density, in the range -3 to 3
+z <- pretty(c(-3,3), 30) # Find  ̃30 equally spaced points
+ht <- dnorm(z)
+# By default: mean=0, standard deviation=1
+plot(z, ht, type="l",xlab="Normal deviate",ylab="Density",yaxs="i")
+# yaxs="i" locates the axes at the limits of the data
+```
+
+# Simulation of random numbers and random samples
+```{r}
+set.seed(23286) # Use to reproduce the sample below
+rbinom(10, size=1, p=.5)
+```
+
+## Simulation of regression data
+```{r}
+options(digits=3)
+n <- 8; x <- seq(1,n); sigma <- 2.5; b0 <- 2; b1 <- 3
+error <- rnorm(n, sd=sigma)
+y <- b0 + b1*x + error
+t(data.frame(x,y))
+```
+
+```{r}
+roller.lm <- lm(depression  ~ weight, data=roller)
+roller.sim <- simulate(roller.lm, nsim=20) # 20 simulations
+with(roller, matplot(weight, roller.sim, pch=1, ylim=range(depression)))
+points(roller, pch=16)
+```
+
+### Simulation of the sampling distribution of the mean
+```{r}
+## Function to generate n sample values; skew population
+sampvals <- function(n) 
+{
+  exp(rnorm(n, mean = 0.5, sd = 0.3))
+}
+## Means across rows of a dimension nsamp x sampsize matrix of
+## sample values gives nsamp means of samples of size sampsize.
+samplingDist <- function(sampsize=3, nsamp=1000, FUN=mean)
+{
+  apply(matrix(sampvals(sampsize*nsamp), ncol=sampsize), 1, FUN)
+}
+size <- c(3,10,30)
+## Simulate means of samples of 3, 9 and 30; place in dataframe
+df <- data.frame(y3=samplingDist(sampsize=size[1]),
+                 y9 = samplingDist(sampsize=size[2]),
+                 y30 = samplingDist(sampsize=size[3]))
+## Simulate source population (sampsize=1)
+y <- samplingDist(sampsize=1)
+densityplot(~y3+y9+y30, data = df, outer=TRUE, layout = c(3,1),
+            plot.points = FALSE, panel = function(x, ...) {
+              panel.densityplot(x, ..., col = "black")
+              panel.densityplot(y, col = "gray40", lty = 2, ...)
+              })
+```
+
+
+## Sampling from finite populations
+```{r}
+## For the sequence below, precede with set.seed(3676)
+sample(1:9384, 15, replace=FALSE)
+```
+
+```{r}
+split(sample(seq(1:10)), rep(c("Control","Treatment"), 5))
+```
+
+```{r}
+sample(1:10, replace=TRUE)
+```
+
+# Model assumptions
+```{r}
+qreference(m=50, seed=21, nrep=5, nrows=1) # 50 values per panel
+```
+
+## Why models matter – adding across contingency tables
+```{r}
+str(UCBAdmissions)
+## Tabulate by Admit and Gender
+byGender <- margin.table(UCBAdmissions, margin=1:2)
+round(100*prop.table(byGender, margin=2)["Admitted", ], 1)
+## Admission rates, by department
+round(100*prop.table(UCBAdmissions, margin=2:3)["Admitted", , ], 1)
+```
+
+
+
+
+
+
+
+
+
+
