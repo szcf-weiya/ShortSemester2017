@@ -1,0 +1,315 @@
+---
+title: "短学期作业四"
+author: "汪利军 3140105707"
+date: "July 7, 2017"
+fontsize: 12pt
+output: 
+  pdf_document:
+    includes:
+      in_header: ../header_zh.tex
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+---
+
+# MB 3.4
+
+## (a)
+
+```{r}
+# generate a random sample
+y <- rnorm(100)
+# calculate the mean
+mean(y)
+# calculate the standard deviation
+sd(y)
+```
+
+## (b)
+
+```{r}
+av = numeric()
+asd = numeric()
+for (i in 1:25)
+{
+  y = rnorm(100)
+  av = c(av, mean(y))
+  asd = c(asd, sd(y))
+}
+av
+asd
+```
+
+## (c)
+
+```{r}
+f <- function()
+{
+  av = numeric()
+  asd = numeric()
+  for (i in 1:25)
+  {
+    y = rnorm(100)
+    av = c(av, mean(y))
+    asd = c(asd, sd(y))
+  } 
+  res = list(av = av, asd = asd)
+  return(res)
+}
+## 对每个均值重复nrep次
+nrep = 100
+data = sapply(1:nrep, function(x) f()$av)
+df = data.frame(val = as.numeric(data), id = rep(1:25, nrep))
+library(lattice)
+## 在同一张图中作出密度图
+densityplot(~val | id, data = df)
+```
+
+
+# MB 3.7
+
+```{r}
+x <- runif(10)
+x
+```
+
+注意到Exercise 5并没有涉及plots，而Exercise 6有涉及plots，猜测应该是重复Exercise 6的操作。
+
+```{r}
+par(mfrow = c(3, 4))
+tmp = sapply(1:4, function(x) plot(density(runif(10)), main = "size = 10"))
+tmp = sapply(1:4, function(x) plot(density(runif(100)), main = "size = 100"))
+tmp = sapply(1:4, function(x) plot(density(runif(1000)), main = "size = 1000"))
+```
+
+# MB 3.9
+
+```{r}
+data = rexp(100, 0.2)
+plot(density(data))
+```
+
+```{r}
+## 样本均值
+mean(data)
+## 总体均值为
+1/0.2
+## 相差
+mean(data) - 1/0.2
+```
+
+# MB 3.11
+
+```{r}
+data <- c(87, 53, 72, 90, 78, 85, 83)
+## 样本均值
+mean(data)
+## 样本方差
+var(data)
+```
+
+对于poisson分布
+```{r}
+x <- rpois(7, 78.3)
+mean(x)
+var(x)
+```
+比较均值和方差可以看出，两者非常接近，所以采用$\lambda = 78.3$的poisson分布能够很好地模拟这些样本数据。
+
+# MB 3.13
+
+```{r}
+Pb = matrix(c(0.6, 0.2, 0.2, 
+              0.2, 0.4, 0.4,
+              0.4, 0.3, 0.3), 3, 3, byrow = TRUE)
+```
+
+题中给出的平稳分布不满足$\pi P = \pi$，而且矩阵Pb不可逆，则其给出的理论平稳分布并不对。
+
+## (a)
+
+编写Markov(n, start, transition) 函数，其中n是生成的Markov链的长度，start是初始状态，transition为转移矩阵，返回值是每次访问的状态，由此可以统计每个状态访问的次数。
+
+```{r}
+Markov <- function(n, start = 0, transition)
+{
+  ## states: 0 1 2 ... size-1
+  size = dim(transition)[1]
+  p0 = numeric(size)
+  p0[start + 1] = 1
+  p = t(p0)
+  res = c(n)
+  for (i in 1:n)
+  {
+    p = p %*% Pb
+    # 产生[0,1]随机数
+    r = runif(1, 0, sum(p))
+    pp = cumsum(p)
+    res[i] = which(r < pp)[1] - 1
+  }
+  return(res)
+}
+```
+
+```{r}
+xx = Markov(1000, 0, Pb)
+freq.tab = table(xx)
+dimnames(freq.tab) = list(xx = c("sun", "cloud", "rain"))
+prop.table(freq.tab)
+```
+
+## (b)
+
+```{r}
+library(zoo)
+plotmarkov <-
+  function(n=10000, start=0, window=100, transition=Pb, npanels=5){
+    xc2 <- Markov(n, start, transition)
+    mav0 <- rollmean(as.integer(xc2==0), window)
+    mav1 <- rollmean(as.integer(xc2==0), window)
+    npanel <- cut(1:length(mav0), breaks=seq(from=1, to=length(mav0),
+                                             length=npanels+1),
+                  include.lowest=TRUE)
+    df <- data.frame(av0=mav0, av1=mav1, x=1:length(mav0),
+                     gp=npanel)
+    print(xyplot(av0+av1  ~ x | gp, data=df, layout=c(1,npanels),
+                 type="l", par.strip.text=list(cex=0.65),
+                 scales=list(x=list(relation="free"))))
+}
+```
+
+```{r}
+plotmarkov(n = 100000, start = 0, window = 100, transition = Pb, npanels = 5)
+```
+
+因给出的转移矩阵不可逆，该问题的平稳性问题无法回答，但是可以看出通过改变window的大小对图像会有一些影响。
+
+# MDL Chapter 10 Worksheet A
+
+```{r}
+A = matrix(c(2, 5,
+             3, 4), 2, 2, byrow = T)
+I = matrix(c(1, 0,
+             0, 1), 2, 2)
+```
+
+## Problem 10.1
+
+```{r}
+myf <- function(x)
+{
+  return(det(A-x*I))
+}
+```
+
+## Pronlem 10.2
+
+```{r}
+myf <- function(x)
+{
+  res = sapply(x, function(xx) det(A-xx*I))
+  return(res)
+}
+```
+
+## Problem 10.3
+
+```{r}
+xrange = pretty(c(-10, 10), 200)
+Px = myf(xrange)
+plot(xrange, Px, xlab = "x", ylab = "P(x)")
+abline(h = 0)
+```
+
+## Problem 10.4
+
+由上图可以看出两个根位于$[-5,0]$和$[5, 10]$中
+
+```{r}
+root1 = uniroot(myf, interval = c(-5, 0))$root
+root2 = uniroot(myf, interval = c(5, 10))$root
+c(root1, root2)
+```
+则两个根为-1.0和7.0
+
+## Problem 10.5
+
+$$
+P(x) = x^2-6x-7
+$$
+
+```{r}
+polyroot(c(-7, -6, 1))
+```
+
+计算得到根为-1和7.
+
+## Problem 10.6
+
+```{r}
+eigen(A)
+```
+特征值为7和-1， 与前面两问的结果都一致。
+
+# MDL Chapter 12 Worksheet B 
+
+## Problem 12.1
+
+```{r}
+rgp <- function(n, mu, sigma, xi)
+{
+   U = runif(n, 0, 1)
+   X = mu + sigma*(U^{-xi}-1)/xi
+   return(X)
+}
+```
+
+## Problem 12.2
+
+```{r}
+data = rgp(1000, 0, 1, 1/4)
+head(data)
+```
+
+## Problem 12.3
+
+```{r}
+## empirical mean and variance
+empirical.mean = mean(data)
+empirical.var = var(data)
+c(empirical.mean, empirical.var)
+```
+
+## Problem 12.4
+
+```{r}
+## theoretical values
+theoretical.mean = 0 + 1/(1-1/4)
+theoretical.var = 1^2/((1-1/4)^2*(1-2*1/4))
+c(theoretical.mean, theoretical.var)
+```
+
+## Problem 12.5
+
+```{r}
+data = rgp(10000, 0, 1, 1/4)
+## empirical mean and variance
+empirical.mean = mean(data)
+empirical.var = var(data)
+c(empirical.mean, empirical.var)
+```
+
+## Problem 12.6
+
+采用上一问中$n=10000$的样本
+
+```{r}
+hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
+```
+
+## Problem 12.7
+
+```{r}
+hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
+lines(density(data), col = "blue")
+```
