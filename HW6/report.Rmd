@@ -1,7 +1,7 @@
 ---
-title: "短学期作业四"
+title: "短学期作业六"
 author: "汪利军 3140105707"
-date: "July 7, 2017"
+date: "July 10, 2017"
 fontsize: 12pt
 output: 
   pdf_document:
@@ -12,304 +12,415 @@ output:
     toc: yes
 ---
 
-# MB 3.4
+\clearpage
+
+# MB 5.1
+
+将塑料强度stretch看成响应变量，而距离distance看成预测变量，则有
+
+```{r}
+library(DAAG)
+yrange = c(min(elastic1$stretch, elastic2$stretch),
+           max(elastic1$stretch, elastic2$stretch))
+xrange = c(min(elastic1$distance, elastic2$distance),
+           max(elastic1$distance, elastic2$distance))
+with(elastic1, plot(distance, stretch, 
+                    xlim = xrange, ylim = yrange, col = 'red', pch = 16))
+with(elastic2, points(distance, stretch, col = 'blue', pch = 16))
+legend("topleft", c("elastic1", "elastic2"), fill = c("red", "blue"))
+```
+
+从图象可以看出，虽然两个elastic的取值范围不一样，但是整体趋势是一致的。
+
+# MB 5.2
+
+
+```{r}
+lm.elastic1 <- lm(stretch~distance, data = elastic1)
+lm.elastic2 <- lm(stretch~distance, data = elastic2)
+```
+
+拟合值为
+```{r}
+fitted.elastic1 <- predict(lm.elastic1, se.fit = T)
+fitted.elastic1$fit
+fitted.elastic2 <- predict(lm.elastic2, se.fit = T)
+fitted.elastic2$fit
+```
+
+拟合值的标准误差为
+```{r}
+## elastic1
+fitted.elastic1$se.fit
+## elastic2
+fitted.elastic2$se.fit
+```
+
+$R^2$为
+```{r}
+summary(lm.elastic1)$r.squared
+summary(lm.elastic2)$r.squared
+```
+
+可见elastic2的拟合效果远远好于elastic1.
+
+使用rlm()的结果，
+```{r}
+library(MASS)
+rlm.elastic1 <- rlm(stretch~distance, data = elastic1)
+rlm.elastic2 <- rlm(stretch~distance, data = elastic2)
+```
+
+两种拟合的summary如下
+```{r}
+summary(lm.elastic1)
+summary(lm.elastic2)
+summary(rlm.elastic1)
+summary(rlm.elastic2)
+```
+
+回归系数的比较：两种拟合方式的系数如下，其中括号的是rlm的结果，可以看出，lm和rlm这两种方式得到的系数相差不是很大，特别对于elastic2，结果几乎一致。
+
+| | (Intercept)|distance|
+|--|--|--|
+|elastic1|24.12691(25.0146)|0.12162(0.1159)|
+|elastic2|17.563844(17.6646)|0.164837(0.1648)|
+
+
+系数的标准误差的比较：两种拟合方式的系数的标准误差如下, 可见这两种方式的系数标准误差相差不大，但使用rlm的系数的标准误差都略小于lm的系数的标准误差。
+
+| | (Intercept) SE|distance SE|
+|--|--|--|
+|elastic1|5.41048(5.0698)|0.02726(0.0255)|
+|elastic2|1.728140(1.7257)|0.008722(0.0087)|
+
+残差图的比较
+
+```{r}
+par(mfrow = c(2,2))
+plot(lm.elastic1$fitted.values, lm.elastic1$residuals, 
+     xlab = "fitted.values", ylab = "residuals")
+plot(rlm.elastic1$fitted.values, rlm.elastic1$residuals, 
+     xlab = "fitted.values", ylab = "residuals")
+plot(lm.elastic2$fitted.values, lm.elastic2$residuals, 
+     xlab = "fitted.values", ylab = "residuals")
+plot(rlm.elastic2$fitted.values, rlm.elastic2$residuals, 
+     xlab = "fitted.values", ylab = "residuals")
+```
+
+第一排是elastic1的残差图，第二排为elastic2的残差图，可以观察发现对于每个数据集，两种回归的残差图模式基本一致。
+
+# MB 5.4
 
 ## (a)
 
+首先在oddbooks中增加一列volume
 ```{r}
-# generate a random sample
-y <- rnorm(100)
-# calculate the mean
-mean(y)
-# calculate the standard deviation
-sd(y)
+oddbooks <- within(oddbooks, volume <- thick*height*breadth)
+```
+
+```{r}
+with(oddbooks, plot(log(volume), log(weight)))
+lm.oddbooks <- lm(log(weight)~log(volume), data = oddbooks)
+abline(lm.oddbooks)
 ```
 
 ## (b)
 
+首先在oddbooks中增加一列area
+
 ```{r}
-av = numeric()
-asd = numeric()
-for (i in 1:25)
+oddbooks <- within(oddbooks, area <- height*breadth)
+```
+
+```{r}
+with(oddbooks, plot(log(area), log(weight)))
+lm.oddbooks2 <- lm(log(weight)~log(area), data = oddbooks)
+abline(lm.oddbooks2)
+```
+
+## (c)
+(a)的回归为
+
+```{r}
+summary(lm.oddbooks)
+```
+
+
+(b)的回归为
+```{r}
+summary(lm.oddbooks2)
+```
+
+如果从$R^2$来看的话，(b)的拟合更好，因0.8746 > 0.7557。
+
+## (d)
+
+首先在oddbooks中增加一列density
+```{r}
+oddbooks <- within(oddbooks, density <- weight/volume)
+```
+
+```{r}
+with(oddbooks, plot(log(volume), log(density)))
+lm.oddbooks.den.a <- lm(log(density)~log(volume), data = oddbooks)
+abline(lm.oddbooks.den.a)
+```
+
+
+```{r}
+with(oddbooks, plot(log(area), log(density)))
+lm.oddbooks.den.b <- lm(log(density)~log(area), data = oddbooks)
+abline(lm.oddbooks.den.b)
+```
+
+回归结果为
+```{r}
+summary(lm.oddbooks.den.a)
+summary(lm.oddbooks.den.b)
+```
+
+从$R^2$来看，两者的拟合效果都不好，$R^2$都不足0.7；尽管如此，（b）的拟合效果更好。
+
+# MB 5.9
+
+```{r}
+with(nswdemo, plot(re78, re75))
+```
+
+从图象可以看出，
+
+1. 数据点的波动极差较大，大部分点较小，然而也存在值很大的点，造成数据点堆聚在原点附近的小区域中。
+2. 存在很多值为0的点，导致大部分点落在左边轴上。
+
+## (a)
+
+去除值为0的数据
+```{r}
+nsw74demo <- within(nsw74demo, {
+  re75[abs(re75) < 1e-10] <-NA
+  re78[abs(re78) < 1e-10] <-NA
+})
+nsw74demo.omit.na <- nsw74demo[complete.cases(nsw74demo),]
+```
+
+作图
+```{r}
+with(nsw74demo.omit.na, plot(log(re75), log(re78)))
+## fitting a smooth trend curve
+with(nsw74demo.omit.na, lines(lowess(log(re75), log(re78)), lwd = 2))
+## regression line
+lm.nsw74demo <- lm(log(re78)~log(re75), data = nsw74demo.omit.na)
+abline(lm.nsw74demo, col = "red")
+legend("topleft", c("trend line", "regression line"), 
+       lty = c(1, 1), lwd = c(2, 1), col = c("black", "red"))
+```
+
+从图中可以看出，回归曲线和趋势曲线大致一致，所以回归曲线大致上能够描述两者之间的关系，但是斜率偏小。
+
+## (b)
+
+四张模型诊断曲线如下
+
+```{r}
+par(mfrow = c(2,2))
+plot(lm.nsw74demo)
+```
+
+从qq图可以看出，除了较小的值偏离理论的分位数，其他值都落在y=x这条直线上，表明近似符合正态性假设，考虑到较小的值偏小可以进一步考虑采用新的数据变换来弥补这一不足；从其他残差图中看没有特别明显的形状，也就是符合不相关性的假设；而从残差杠杆图可以看出，有个别的观测有较大的杠杆值，再进一步的研究中可以考虑删去这些离群点重新拟合。
+
+# MB 5.10
+
+```{r}
+simY <- function(x)
 {
-  y = rnorm(100)
-  av = c(av, mean(y))
-  asd = c(asd, sd(y))
+  nlen = length(x)
+  return(2+3*x+rnorm(nlen))
 }
-av
-asd
+```
+
+
+当对$x$均匀采样时
+```{r}
+set.seed(123)
+x1 = runif(10, -1, 1)
+y1 = simY(x1)
+```
+
+当$x_i\in \{-1, 1\}, i=1,\ldots,10$时
+
+```{r}
+set.seed(123)
+x2 = rep(c(-1, 1), 5)
+y2 = simY(x2)
+```
+
+进行线性回归有
+```{r}
+lm.1 <- lm(y1 ~ x1)
+lm.2 <- lm(y2 ~ x2)
+```
+
+两个回归的结果为
+```{r}
+summary(lm.1)
+summary(lm.2)
+```
+
+由上述结果我们有
+
+||slope|std. err| noise std. deviation|
+|--|--|--|--|
+|lm.1|2.336|0.8648|22.82|
+|lm.2|2.8943|0.3177|1.005|
+
+可见对于第二种拟合效果更好一点。这两种设计的优缺点分别是
+
+1. 设计一依赖于每次随机的数据，所以改变seed会有不同的拟合结果，由于数据量较小，所以有较大可能使得拟合的模型很好；但这种随机性恰恰是设计二所不具备的
+2. 设计二的$x$是固定的，得到的回归模型更加稳定，不会随着随机种子的改变而改变。
+
+# MB 5.11
+
+## (a)
+
+```{r}
+library(DAAG)
+e1.lm <- lm(distance~ stretch, data = elastic1)
+elastic1$newdistance <- 
+  cbind(rep(1, 7), elastic1$stretch)%*%coef(e1.lm) + 
+  rnorm(7, sd=summary(e1.lm)$sigma)
+```
+
+## (b)
+simulate与(a)中的代码有相同的效果
+```{r}
+simulate(e1.lm)
 ```
 
 ## (c)
 
 ```{r}
-f <- function()
+par(mfrow = c(1,2))
+lm.new1 <- lm(newdistance ~ stretch, data = elastic1)
+plot(e1.lm$fitted.values, e1.lm$residuals, main = "original data")
+plot(lm.new1$fitted.values, lm.new1$residuals, main = "artificial data")
+```
+
+为了重复上述操作，编写下面的repeatPlots函数
+```{r}
+repeatPlots <- function(n, dataset)
 {
-  av = numeric()
-  asd = numeric()
-  for (i in 1:25)
-  {
-    y = rnorm(100)
-    av = c(av, mean(y))
-    asd = c(asd, sd(y))
-  } 
-  res = list(av = av, asd = asd)
-  return(res)
-}
-## 对每个均值重复nrep次
-nrep = 100
-data = sapply(1:nrep, function(x) f()$av)
-df = data.frame(val = as.numeric(data), id = rep(1:25, nrep))
-library(lattice)
-## 在同一张图中作出密度图
-densityplot(~val | id, data = df)
-```
-
-
-# MB 3.7
-
-```{r}
-x <- runif(10)
-x
-```
-
-注意到Exercise 5并没有涉及plots，而Exercise 6有涉及plots，猜测应该是重复Exercise 6的操作。
-
-```{r}
-par(mfrow = c(3, 4))
-tmp = sapply(1:4, function(x) plot(density(runif(10)), main = "size = 10"))
-tmp = sapply(1:4, function(x) plot(density(runif(100)), main = "size = 100"))
-tmp = sapply(1:4, function(x) plot(density(runif(1000)), main = "size = 1000"))
-```
-
-# MB 3.9
-
-```{r}
-data = rexp(100, 0.2)
-plot(density(data))
-```
-
-```{r}
-## 样本均值
-mean(data)
-## 总体均值为
-1/0.2
-## 相差
-mean(data) - 1/0.2
-```
-
-# MB 3.11
-
-```{r}
-data <- c(87, 53, 72, 90, 78, 85, 83)
-## 样本均值
-mean(data)
-## 样本方差
-var(data)
-```
-
-对于poisson分布
-```{r}
-x <- rpois(7, 78.3)
-mean(x)
-var(x)
-```
-比较均值和方差可以看出，两者非常接近，所以采用$\lambda = 78.3$的poisson分布能够很好地模拟这些样本数据。
-
-# MB 3.13
-
-```{r}
-Pb = matrix(c(0.6, 0.2, 0.2, 
-              0.2, 0.4, 0.4,
-              0.4, 0.3, 0.3), 3, 3, byrow = TRUE)
-```
-
-题中给出的平稳分布不满足$\pi P = \pi$，而且矩阵Pb不可逆，则其给出的理论平稳分布并不对。
-
-## (a)
-
-编写Markov(n, start, transition) 函数，其中n是生成的Markov链的长度，start是初始状态，transition为转移矩阵，返回值是每次访问的状态，由此可以统计每个状态访问的次数。
-
-```{r}
-Markov <- function(n, start = 0, transition)
-{
-  ## states: 0 1 2 ... size-1
-  size = dim(transition)[1]
-  p0 = numeric(size)
-  p0[start + 1] = 1
-  p = t(p0)
-  res = c(n)
+  lm.old <- lm(distance~ stretch, data = dataset)
   for (i in 1:n)
   {
-    p = p %*% Pb
-    # 产生[0,1]随机数
-    r = runif(1, 0, sum(p))
-    pp = cumsum(p)
-    res[i] = which(r < pp)[1] - 1
+    dataset$newdistance <- 
+    cbind(rep(1, nrow(dataset)), dataset$stretch)%*%coef(lm.old) + 
+      rnorm(nrow(dataset), sd=summary(lm.old)$sigma)
+    
+    lm.new <- lm(newdistance~stretch, dataset)
+    par(mfrow = c(1,2))
+    plot(lm.old$fitted.values, lm.old$residuals, 
+         main = paste0("original data (repeat = ", i, ")"))
+    plot(lm.new$fitted.values, lm.new$residuals, 
+         main = paste0("artificial data (repeat = ", i, ")"))
   }
-  return(res)
 }
 ```
 
+重复5次，
+
 ```{r}
-xx = Markov(1000, 0, Pb)
-freq.tab = table(xx)
-dimnames(freq.tab) = list(xx = c("sun", "cloud", "rain"))
-prop.table(freq.tab)
+set.seed(1)
+repeatPlots(5, elastic1)
 ```
 
-## (b)
+原始残差图中的异常点不一定是人造数据中的异常点，比如在repeat=1中，第6个点是异常点，然而在人造数据中第六个的的残差已经很小了，所以原始残差图和人造残差图的异常点不一定一致。
+
+对于elastic2我们也有重复5次后的结果
 
 ```{r}
-library(zoo)
-plotmarkov <-
-  function(n=10000, start=0, window=100, transition=Pb, npanels=5){
-    xc2 <- Markov(n, start, transition)
-    mav0 <- rollmean(as.integer(xc2==0), window)
-    mav1 <- rollmean(as.integer(xc2==0), window)
-    npanel <- cut(1:length(mav0), breaks=seq(from=1, to=length(mav0),
-                                             length=npanels+1),
-                  include.lowest=TRUE)
-    df <- data.frame(av0=mav0, av1=mav1, x=1:length(mav0),
-                     gp=npanel)
-    print(xyplot(av0+av1  ~ x | gp, data=df, layout=c(1,npanels),
-                 type="l", par.strip.text=list(cex=0.65),
-                 scales=list(x=list(relation="free"))))
-}
+set.seed(1)
+repeatPlots(5, elastic2)
 ```
 
-```{r}
-plotmarkov(n = 100000, start = 0, window = 100, transition = Pb, npanels = 5)
-```
 
-因给出的转移矩阵不可逆，该问题的平稳性问题无法回答，但是可以看出通过改变window的大小对图像会有一些影响。
 
-# MDL Chapter 10 Worksheet A
+# MDL Chapter 14 Worksheet A: Study of intima media
+
+## Problem 14.1
 
 ```{r}
-A = matrix(c(2, 5,
-             3, 4), 2, 2, byrow = T)
-I = matrix(c(1, 0,
-             0, 1), 2, 2)
-```
-
-## Problem 10.1
-
-```{r}
-myf <- function(x)
-{
-  return(det(A-x*I))
-}
-```
-
-## Pronlem 10.2
-
-```{r}
-myf <- function(x)
-{
-  res = sapply(x, function(xx) det(A-xx*I))
-  return(res)
-}
-```
-
-## Problem 10.3
-
-```{r}
-xrange = pretty(c(-10, 10), 200)
-Px = myf(xrange)
-plot(xrange, Px, xlab = "x", ylab = "P(x)")
-abline(h = 0)
-```
-
-## Problem 10.4
-
-由上图可以看出两个根位于$[-5,0]$和$[5, 10]$中
-
-```{r}
-root1 = uniroot(myf, interval = c(-5, 0))$root
-root2 = uniroot(myf, interval = c(5, 10))$root
-c(root1, root2)
-```
-则两个根为-1.0和7.0
-
-## Problem 10.5
-
-$$
-P(x) = x^2-6x-7
-$$
-
-```{r}
-polyroot(c(-7, -6, 1))
-```
-
-计算得到根为-1和7.
-
-## Problem 10.6
-
-```{r}
-eigen(A)
-```
-特征值为7和-1， 与前面两问的结果都一致。
-
-# MDL Chapter 12 Worksheet B 
-
-## Problem 12.1
-
-```{r}
-rgp <- function(n, mu, sigma, xi)
-{
-   U = runif(n, 0, 1)
-   X = mu + sigma*(U^{-xi}-1)/xi
-   return(X)
-}
-```
-
-## Problem 12.2
-
-```{r}
-data = rgp(1000, 0, 1, 1/4)
+library(XLConnect)
+tmp = tempfile(fileext = ".xls")
+download.file(url = "http://biostatisticien.eu/springeR/Intima_Media_Thickness.xls", 
+              destfile = tmp, mode = "wb")
+connect =  loadWorkbook(tmp)
+data = readWorksheet(connect, 1)
 head(data)
 ```
 
-## Problem 12.3
+## Problem 14.2
 
 ```{r}
-## empirical mean and variance
-empirical.mean = mean(data)
-empirical.var = var(data)
-c(empirical.mean, empirical.var)
+with(data, plot(measure ~ AGE))
 ```
 
-## Problem 12.4
+从散点图可以看出，随着AGE的增大，measure也增大。
+
+## Problem 14.3
+
+采用相关系数来衡量变量直接的联系，相关系数越大，联系越强。得到如下的相关系数矩阵，进而可以判断两者之间的相关性。
 
 ```{r}
-## theoretical values
-theoretical.mean = 0 + 1/(1-1/4)
-theoretical.var = 1^2/((1-1/4)^2*(1-2*1/4))
-c(theoretical.mean, theoretical.var)
+cor(data)
 ```
 
-## Problem 12.5
+## Problem 14.4
 
 ```{r}
-data = rgp(10000, 0, 1, 1/4)
-## empirical mean and variance
-empirical.mean = mean(data)
-empirical.var = var(data)
-c(empirical.mean, empirical.var)
+lm.data <- lm(measure~AGE, data = data)
+summary(lm.data)
 ```
 
-## Problem 12.6
+参数估计如上所返回的结果所示。
 
-采用上一问中$n=10000$的样本
+将回归曲线添加到散点图中
+```{r}
+with(data, plot(measure ~ AGE))
+abline(lm.data)
+```
+
+## Problem 14.5
+
+回归模型的诊断图如下，
+```{r}
+par(mfrow=c(2,2))
+plot(lm.data)
+```
+
+从QQ图可以看出残差有重尾现象，理论分位数高的地方，标准残差的分位数也较高，但在一定精度范围内，也可以认定满足残差正态性的假设；另外从残差图中也可以观察出它满足线性的假设，因为其与拟合值不存在明显的线性关系；从Scale-Location也可以看出它不太满足方差齐性的假设，因为它没有随机散布在水平直线附近，而是一条有明显斜率的曲线附近，这表明需要进一步优化模型。
+
+## Problem 14.6
 
 ```{r}
-hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
+predict(lm.data, data.frame(AGE=33), interval = "prediction")
 ```
 
-## Problem 12.7
+从返回结果可以看出，预测值为0.5025848，prediction interval 为$[0.3578677, 0.647302]$
+
+## Problem 14.7
 
 ```{r}
-hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
-lines(density(data), col = "blue")
+predict(lm.data, data.frame(AGE=33), interval = "confidence")
 ```
+从返回结果可以看出，预测值为0.5025848，confidence interval 为$[0.4867222, 0.5184474]$
+
+## Problem 14.8
+
+新模型如下
+```{r}
+lm.data2 <- lm(measure ~ AGE + I(AGE^2) , data = data)
+summary(lm.data2)
+```
+
+此时$R^2$为0.3277， 略高于原来的0.3051，因此在$R^2$意义下，该模型更好。

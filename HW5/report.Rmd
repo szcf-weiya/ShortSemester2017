@@ -1,7 +1,7 @@
 ---
-title: "短学期作业四"
+title: "短学期作业五"
 author: "汪利军 3140105707"
-date: "July 7, 2017"
+date: "July 10, 2017"
 fontsize: 12pt
 output: 
   pdf_document:
@@ -12,304 +12,252 @@ output:
     toc: yes
 ---
 
-# MB 3.4
-
-## (a)
+# MB 4.6
 
 ```{r}
-# generate a random sample
-y <- rnorm(100)
-# calculate the mean
-mean(y)
-# calculate the standard deviation
-sd(y)
+y1 <- rnorm(51)
+y <- y1[-1] + y1[-51]
+acf(y1)
+acf(y)
 ```
 
-## (b)
+
+# MB 4.7
+
+产生y的函数如下
 
 ```{r}
-av = numeric()
-asd = numeric()
-for (i in 1:25)
+GenY <- function()
 {
-  y = rnorm(100)
-  av = c(av, mean(y))
-  asd = c(asd, sd(y))
+  y1 <- rnorm(51)
+  y <- y1[-1] + y1[-51]
+  return(y)
 }
+```
+
+重复25次
+```{r}
+data <- sapply(1:25, function(i) GenY())
+```
+
+计算均值
+```{r}
+av = colMeans(data)
 av
-asd
 ```
 
-## (c)
+计算方差
 
 ```{r}
-f <- function()
-{
-  av = numeric()
-  asd = numeric()
-  for (i in 1:25)
-  {
-    y = rnorm(100)
-    av = c(av, mean(y))
-    asd = c(asd, sd(y))
-  } 
-  res = list(av = av, asd = asd)
-  return(res)
-}
-## 对每个均值重复nrep次
-nrep = 100
-data = sapply(1:nrep, function(x) f()$av)
-df = data.frame(val = as.numeric(data), id = rep(1:25, nrep))
-library(lattice)
-## 在同一张图中作出密度图
-densityplot(~val | id, data = df)
+v = apply(data, 2, var)
+v
 ```
 
-
-# MB 3.7
-
-```{r}
-x <- runif(10)
-x
-```
-
-注意到Exercise 5并没有涉及plots，而Exercise 6有涉及plots，猜测应该是重复Exercise 6的操作。
-
-```{r}
-par(mfrow = c(3, 4))
-tmp = sapply(1:4, function(x) plot(density(runif(10)), main = "size = 10"))
-tmp = sapply(1:4, function(x) plot(density(runif(100)), main = "size = 100"))
-tmp = sapply(1:4, function(x) plot(density(runif(1000)), main = "size = 1000"))
-```
-
-# MB 3.9
-
-```{r}
-data = rexp(100, 0.2)
-plot(density(data))
-```
-
-```{r}
-## 样本均值
-mean(data)
-## 总体均值为
-1/0.2
-## 相差
-mean(data) - 1/0.2
-```
-
-# MB 3.11
-
-```{r}
-data <- c(87, 53, 72, 90, 78, 85, 83)
-## 样本均值
-mean(data)
-## 样本方差
-var(data)
-```
-
-对于poisson分布
-```{r}
-x <- rpois(7, 78.3)
-mean(x)
-var(x)
-```
-比较均值和方差可以看出，两者非常接近，所以采用$\lambda = 78.3$的poisson分布能够很好地模拟这些样本数据。
-
-# MB 3.13
-
-```{r}
-Pb = matrix(c(0.6, 0.2, 0.2, 
-              0.2, 0.4, 0.4,
-              0.4, 0.3, 0.3), 3, 3, byrow = TRUE)
-```
-
-题中给出的平稳分布不满足$\pi P = \pi$，而且矩阵Pb不可逆，则其给出的理论平稳分布并不对。
+# MB 4.9
 
 ## (a)
 
-编写Markov(n, start, transition) 函数，其中n是生成的Markov链的长度，start是初始状态，transition为转移矩阵，返回值是每次访问的状态，由此可以统计每个状态访问的次数。
+构造表格如下
 
 ```{r}
-Markov <- function(n, start = 0, transition)
-{
-  ## states: 0 1 2 ... size-1
-  size = dim(transition)[1]
-  p0 = numeric(size)
-  p0[start + 1] = 1
-  p = t(p0)
-  res = c(n)
-  for (i in 1:n)
-  {
-    p = p %*% Pb
-    # 产生[0,1]随机数
-    r = runif(1, 0, sum(p))
-    pp = cumsum(p)
-    res[i] = which(r < pp)[1] - 1
-  }
-  return(res)
-}
+tab1 <- as.table(rbind(c(74, 43, 11), c(71, 38, 65)))
+dimnames(tab1) <- list(reduction = c(">= 50%", "<50%"),
+                       treatment = c("Acupuncture", "Sham acupuncture", "Waiting list"))
+tab1
 ```
 
+为检验不同的treatment对于reduction是否独立，我们采用卡方检验
+
 ```{r}
-xx = Markov(1000, 0, Pb)
-freq.tab = table(xx)
-dimnames(freq.tab) = list(xx = c("sun", "cloud", "rain"))
-prop.table(freq.tab)
+chisq.test(tab1)
 ```
+
+由上述的p值（p-value << 0.05）可以看出，不同的治疗方案（treatment）与疗效（reduction）不独立。
+
 
 ## (b)
 
+构造表格如下
+
 ```{r}
-library(zoo)
-plotmarkov <-
-  function(n=10000, start=0, window=100, transition=Pb, npanels=5){
-    xc2 <- Markov(n, start, transition)
-    mav0 <- rollmean(as.integer(xc2==0), window)
-    mav1 <- rollmean(as.integer(xc2==0), window)
-    npanel <- cut(1:length(mav0), breaks=seq(from=1, to=length(mav0),
-                                             length=npanels+1),
-                  include.lowest=TRUE)
-    df <- data.frame(av0=mav0, av1=mav1, x=1:length(mav0),
-                     gp=npanel)
-    print(xyplot(av0+av1  ~ x | gp, data=df, layout=c(1,npanels),
-                 type="l", par.strip.text=list(cex=0.65),
-                 scales=list(x=list(relation="free"))))
+tab2 <- as.table(cbind(c(82, 17, 30), c(30, 26, 16)))
+dimnames(tab2) <- list(guess = c("Chinese", "Other", "Don't know"),
+                       treatment = c("Acupuncture", "Sham acupuncture"))
+tab2
+```
+
+为检验病人的猜测与接受的treatment直接的独立性，采用卡方检验。
+
+```{r}
+chisq.test(tab2)
+```
+
+由上述结果的p值（p-value << 0.05），可以看出不同的治疗方案与病人的猜测是不独立的。
+
+# MB 4.12
+
+```{r}
+admissions.A <- array(c(30,30,10,10,15,5,30,10),dim=c(2,2,2))
+admissions.B <- array(c(30,30,20,10,10,5,20,25),dim=c(2,2,2))
+## 从mantelhaen.test()的帮助文档中得到woolf函数
+woolf <- function(x) {
+  x <- x + 1 / 2
+  k <- dim(x)[3]
+  or <- apply(x, 3, function(x) (x[1,1]*x[2,2])/(x[1,2]*x[2,1]))
+  w <-  apply(x, 3, function(x) 1 / sum(1 / x))
+  1 - pchisq(sum(w * (log(or) - weighted.mean(log(or), w)) ^ 2), k - 1)
 }
 ```
 
-```{r}
-plotmarkov(n = 100000, start = 0, window = 100, transition = Pb, npanels = 5)
-```
-
-因给出的转移矩阵不可逆，该问题的平稳性问题无法回答，但是可以看出通过改变window的大小对图像会有一些影响。
-
-# MDL Chapter 10 Worksheet A
+对于Table4.10A
 
 ```{r}
-A = matrix(c(2, 5,
-             3, 4), 2, 2, byrow = T)
-I = matrix(c(1, 0,
-             0, 1), 2, 2)
+woolf(admissions.A)
 ```
+表明p-value = 0.9696，表面不能拒绝原假设，也就是不同的类别（如性别，专业和录取情况）之间没有显著的差异。
 
-## Problem 10.1
+对于Table4.10B
 
 ```{r}
-myf <- function(x)
-{
-  return(det(A-x*I))
-}
+woolf(admissions.B)
 ```
+表面p-value = 0.043 < 0.05，表面在0.05的置信水平下拒绝原假设，也就是不同的类别（如性别，专业和录取情况）之间存在显著的差异。
 
-## Pronlem 10.2
+
+
+下面进行Mantel–Haenzel检验，对于Table4.10A，
 
 ```{r}
-myf <- function(x)
-{
-  res = sapply(x, function(xx) det(A-xx*I))
-  return(res)
-}
+mantelhaen.test(admissions.A)
 ```
 
-## Problem 10.3
+由上述结果可以看出，因p-value = 1，所以不能拒绝原假设，也就是真实的比率等于1，这意味着不同的类别之间不存在差异；估计的common odds ratio = 1，且95\%的置信区间为$[0.4565826, 2.1901841]$
+
+对于Table4.10B
 
 ```{r}
-xrange = pretty(c(-10, 10), 200)
-Px = myf(xrange)
-plot(xrange, Px, xlab = "x", ylab = "P(x)")
-abline(h = 0)
+mantelhaen.test(admissions.B)
 ```
 
-## Problem 10.4
+由上述结果可以看出，因p-value = 0.9053，所以不能拒绝原假设，也就是真实的比率等于1，这意味着不同的类别之间不存在差异；估计的common odds ratio = 0.9，且95\%的置信区间为$[0.448071, 1.807749]$
 
-由上图可以看出两个根位于$[-5,0]$和$[5, 10]$中
+# MDL Chapter 13 Worksheet C: East German athletes 
 
-```{r}
-root1 = uniroot(myf, interval = c(-5, 0))$root
-root2 = uniroot(myf, interval = c(5, 10))$root
-c(root1, root2)
-```
-则两个根为-1.0和7.0
-
-## Problem 10.5
+## Problem 13.1
 
 $$
-P(x) = x^2-6x-7
+H_0: \mu = \mu_0\qquad H_1: \mu>\mu_0
+$$
+
+则在$H_0$下，
+$$
+T = \sqrt n(\frac{\bar X-\mu_0}{\hat \sigma}) \sim t(n-1)
+$$
+
+采用t检验
+
+```{r}
+data = c(3.22, 3.07, 3.17, 2.91, 3.40, 3.58, 3.23, 3.11, 3.62)
+t.test(data, mu = 3.1, alternative = "greater")
+```
+
+## Problem 13.2
+
+由上述t检验结果可以看出，p值为0.04046<0.05，故在0.05的水平下拒绝原假设，也就是$\mu>3.1$，于是可以认定East German 运动员服用了performance-enhancing drugs。
+
+# MDL Chapter 13 Worksheet C: Drinking and driving question
+
+$$
+H_0:\mu_1=\mu_2\qquad H_1:\mu_1\neq \mu_2
+$$
+
+在$H_0$下，
+$$
+T=\frac{\bar X_1-\bar X_2}{\hat\sigma\sqrt{1/n_1+1/n_2}}\sim t(n_1+n_2-2)
+$$
+
+其中
+$$
+\hat \sigma^2 = \frac{(n_1-1)\hat\sigma_1^2 + (n_2-1)\hat\sigma_2^2}{n_1+n_2-2}
 $$
 
 ```{r}
-polyroot(c(-7, -6, 1))
+before = c(57, 54, 62, 64, 71, 65, 70, 75, 68, 70, 77, 74, 80, 83)
+after = c(55, 60, 68, 69, 70, 73, 74, 74, 75, 76, 78, 81, 90)
+t.test(before, after)
 ```
 
-计算得到根为-1和7.
+由上述t检验结果可以看出，p值为0.3355>0.05，也就是不能拒绝原假设，故alcohol对reflexes没有效果。
 
-## Problem 10.6
+# MDL Chapter 15 Worksheet B: Study of batteries
+
+## Problem 15.1
+
+存在两个因子，temperature和type of battery；temperature有3个层次，分别为$15^oC, 70^oC, 125^oC$；type of battery有三个层次，分别为Type I， Type II， Type III。响应变量为lifetime。
+
+## Problem 15.2
+
+令A，B都是含三个层次的因子，对于每个数据对$(i, j), i =1,2,3; j=1,2,3$，都观察了4次lifetime的值，并且假设
+$$
+Y_{ij}\sim {\cal N}(\mu_{ij}, \sigma^2)
+$$
+
+得到模型
+$$
+Y_{ijk}=\mu_{ij}+\varepsilon_{ijk}, \qquad \text{for}\; k = 1, 2, 3, 4; i = 1,2,3; j=1,2,3
+$$
+
+其中$\varepsilon_{ijk}$为独立同分布的随机变量，${\cal N}(0,\sigma^2)$
+
+## Problem 15.3
+
+构造数据集
 
 ```{r}
-eigen(A)
+lifetime <- c(130, 155, 74, 180, 34, 40, 80, 75, 20, 70, 82, 58,
+              150, 188, 159, 126, 136, 122, 106, 115, 25, 70, 58, 45,
+              138, 110, 168, 160, 174, 120, 150, 139, 96, 104, 82, 60)
+type <- gl(3, 12, 36, labels = paste0("Type ", 1:3))
+temperature <- gl(3, 3, 36, labels = paste0(c(15, 70, 125), "C"))
+battery <- data.frame(lifetime, type, temperature)
 ```
-特征值为7和-1， 与前面两问的结果都一致。
 
-# MDL Chapter 12 Worksheet B 
-
-## Problem 12.1
+interaction 图象如下
 
 ```{r}
-rgp <- function(n, mu, sigma, xi)
-{
-   U = runif(n, 0, 1)
-   X = mu + sigma*(U^{-xi}-1)/xi
-   return(X)
-}
+interaction.plot(type, temperature, lifetime)
+interaction.plot(temperature, type, lifetime)
 ```
 
-## Problem 12.2
+## Problem 15.4
+
+参数估计为
+```{r}
+summary(lm(lifetime~type*temperature))
+```
+
+## Problem 15.5
+
+ANOVA Table如下
+```{r}
+summary(aov(lifetime~type*temperature, data = battery))
+```
+
+## Problem 15.6
+
+为进行相关性检验，我们采用卡方检验，对$Y_{ijk}, k=1,2,3,4$取均值来表示Type $i$，第$j$个温度的lifetime，从而构造列联表进行相关性检验
 
 ```{r}
-data = rgp(1000, 0, 1, 1/4)
-head(data)
+lifetime2 <- array(lifetime, dim = c(4, 3, 3))
+tab = margin.table(lifetime2, margin = c(3,2))/4
+dimnames(tab) = list(type = c("Type 1", "Type 2", "Type 3"),
+                     temperature = c("15", "70", "125"))
+tab
 ```
 
-## Problem 12.3
-
+进行卡方检验
 ```{r}
-## empirical mean and variance
-empirical.mean = mean(data)
-empirical.var = var(data)
-c(empirical.mean, empirical.var)
+chisq.test(tab)
 ```
 
-## Problem 12.4
-
-```{r}
-## theoretical values
-theoretical.mean = 0 + 1/(1-1/4)
-theoretical.var = 1^2/((1-1/4)^2*(1-2*1/4))
-c(theoretical.mean, theoretical.var)
-```
-
-## Problem 12.5
-
-```{r}
-data = rgp(10000, 0, 1, 1/4)
-## empirical mean and variance
-empirical.mean = mean(data)
-empirical.var = var(data)
-c(empirical.mean, empirical.var)
-```
-
-## Problem 12.6
-
-采用上一问中$n=10000$的样本
-
-```{r}
-hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
-```
-
-## Problem 12.7
-
-```{r}
-hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
-lines(density(data), col = "blue")
-```
+由上述p值可以看出，电池类型与温度之间不独立，也就是存在一定的相关性。

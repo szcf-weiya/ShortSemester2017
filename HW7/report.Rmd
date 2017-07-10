@@ -1,7 +1,7 @@
 ---
-title: "短学期作业四"
+title: "短学期作业七"
 author: "汪利军 3140105707"
-date: "July 7, 2017"
+date: "July 10, 2017"
 fontsize: 12pt
 output: 
   pdf_document:
@@ -12,304 +12,338 @@ output:
     toc: yes
 ---
 
-# MB 3.4
+\clearpage
+
+# MB 6.1
+
+```{r}
+library(DAAG)
+cities$have <- factor((cities$REGION == "ON") | 
+                        (cities$REGION == "WEST"))
+```
+
+使用原始数据有
+
+```{r}
+plot(POP1996 ~ POP1992, data = cities,
+     col = as.integer(cities$have))
+```
+
+
+使用对数变换后的数据有
+
+```{r}
+plot(log(POP1996) ~ log(POP1992), data = cities,
+     col = as.integer(cities$have))
+```
+
+因为数据对数化后分布更加均匀，所以对数化后作图更好一点。
+
+```{r}
+cities.lm1 <- lm(POP1996~have+POP1992, data = cities)
+cities.lm2 <- lm(log(POP1996)~have+log(POP1992), data = cities)
+```
+
+两个回归的诊断图象如下所示，
+
+```{r}
+par(mfrow=c(2,2))
+plot(cities.lm1)
+par(mfrow=c(2,2))
+plot(cities.lm2)
+```
+
+比较这两个回归模型的诊断图可以看出，采用第二种模型会更好，首先，从残差图可以看出模型1的残差远远高于模型2，并且存在较多的异常值；另外，从QQ图可以看出模型1不满足残差正态性假设，与直线$y=x$偏差较大，而相比于模型1，模型2的QQ图基本上落在$y=x$直线上。基于这两点，可以认定模型2优于模型1。
+
+# MB 6.2
+
+散点图矩阵如下
+
+```{r}
+library(MASS)
+pairs(cement)
+```
+
+
+从散点图矩阵中大致可以发现，y与x1，x2正相关，而与x3,x4负相关。
+
+进行多元回归有
+```{r}
+summary(lm(y~x1+x2+x3+x4, data = cement))
+```
+
+从回归结果可以看出，虽然$R^2$较高，但是各个系数的显著性水平都不高。
+
+进行$log(x/(100-x))$变换后
+```{r}
+cement2 = cement
+cement2[1:4] <- sapply(1:4, function(x) log(x/(100-x)))
+```
+
+此时散点图矩阵为
+```{r}
+pairs(cement2)
+```
+
+进行多元回归我们有
+```{r}
+summary(lm(y~x1+x2+x3+x4, data = cement))
+```
+
+结合回归结果和散点图矩阵来看，不进行变换的效果更好一点。
+
+为了进一步研究，我们还可以考虑交叉项的影响，在构造多元回归的时候加入交叉项，可能会是模型更加完善。
+
+# MB 6.4
+
+分别对男性女性的爬山时间进行回归分析，得到如下结果
+```{r}
+lm.male = lm(time~dist+climb, data = hills2000)
+lm.female = lm(timef~dist+climb, data = hills2000)
+summary(lm.male)
+summary(lm.female)
+```
+
+从回归结果中的$R^2$看，两个回归模型的拟合结果均较好。
+
+
+
+# MB 6.6
 
 ## (a)
 
 ```{r}
-# generate a random sample
-y <- rnorm(100)
-# calculate the mean
-mean(y)
-# calculate the standard deviation
-sd(y)
+nihills.lm <- lm(time ~ dist + climb, data = nihills)
+nihills2.lm <- lm(time ~ dist + climb + dist:climb, data = nihills)
+anova(nihills.lm, nihills2.lm)
 ```
+
+## (b)
+由F检验的结果只，模型2显著，于是选择模型2。诊断图象如下
+```{r}
+plot(nihills2.lm)
+```
+从残差杠杆图可以看出Seven Sevens为异常点，因为其cook距离大于1。
+
+删掉该点
+```{r}
+nihills2 <- nihills[-which(rownames(nihills)=="Seven Sevens"),]
+```
+
+重新拟合模型
+
+```{r}
+nihills.lm.rm <- lm(time ~ dist + climb, data = nihills2)
+nihills2.lm.rm <- lm(time ~ dist + climb + dist:climb, data = nihills2)
+anova(nihills.lm.rm, nihills2.lm.rm)
+```
+
+由anova分析结果，此时p值不显著，也就是交叉项不显著，因此此时应该采用模型1，得到下面的诊断图：
+
+```{r}
+plot(nihills.lm.rm)
+```
+
+其中从残差杠杆图可以看出有一个点的Cook距离位于0.5和1之间，虽然相对偏大，但在容许Cook距离小于1的情形下可以不看成异常点。
+
+# MB 6.7
+
+```{r}
+lm.litters <- lm(brainwt ~ bodywt + lsize, data = litters)
+vif(lm.litters)
+```
+因bodywy和lsize的VIF都大于10， 则表明该模型有严重的多重共线性，于是需要进一步优化模型，如采用主成分回归。
+
+# MB 6.8
+
+## (a)
+
+```{r}
+lambda = seq(0,0.2,0.001)
+ridge.litters <- lm.ridge(brainwt ~ bodywt + lsize, data = litters, lambda = lambda)
+plot(lambda, ridge.litters$GCV)
+```
+
+取GCV最低时的$\lambda$作为岭回归模型
+
+```{r}
+lambda.min = lambda[which.min(ridge.litters$GCV)]
+```
+
+则此时岭回归模型为
+```{r}
+ridge.litters.min = lm.ridge(brainwt ~ bodywt + lsize, 
+                             data = litters, lambda = lambda.min)
+```
+
+其变量系数为
+```{r}
+coef(ridge.litters.min)
+```
+
+而lm的变量系数为
+```{r}
+coef(lm.litters)
+```
+
+可见，bodywt的系数相差不大，但是lsize的系数岭回归更大。
 
 ## (b)
 
 ```{r}
-av = numeric()
-asd = numeric()
-for (i in 1:25)
-{
-  y = rnorm(100)
-  av = c(av, mean(y))
-  asd = c(asd, sd(y))
-}
-av
-asd
+## 岭回归估计
+coef(ridge.litters.min) %*% c(1, 7, 10)
+## 最小二乘回归估计
+coef(lm.litters) %*% c(1, 7, 10)
 ```
 
-## (c)
-
+编写下面的bootstrap.litter(B, seed)函数，通过产生B个bootstrap样本，对每个bootstrap样本估计mean brain weight并返回。
 ```{r}
-f <- function()
+bootstrap.litter <- function(B, seed)
 {
-  av = numeric()
-  asd = numeric()
-  for (i in 1:25)
+  set.seed(seed)
+  Bsample = sapply(1:B, function(x) sample(nrow(litters), replace = TRUE))
+  lambda = seq(0,0.2,0.001)
+  res = c()
+  for (i in 1:B)
   {
-    y = rnorm(100)
-    av = c(av, mean(y))
-    asd = c(asd, sd(y))
-  } 
-  res = list(av = av, asd = asd)
-  return(res)
-}
-## 对每个均值重复nrep次
-nrep = 100
-data = sapply(1:nrep, function(x) f()$av)
-df = data.frame(val = as.numeric(data), id = rep(1:25, nrep))
-library(lattice)
-## 在同一张图中作出密度图
-densityplot(~val | id, data = df)
-```
-
-
-# MB 3.7
-
-```{r}
-x <- runif(10)
-x
-```
-
-注意到Exercise 5并没有涉及plots，而Exercise 6有涉及plots，猜测应该是重复Exercise 6的操作。
-
-```{r}
-par(mfrow = c(3, 4))
-tmp = sapply(1:4, function(x) plot(density(runif(10)), main = "size = 10"))
-tmp = sapply(1:4, function(x) plot(density(runif(100)), main = "size = 100"))
-tmp = sapply(1:4, function(x) plot(density(runif(1000)), main = "size = 1000"))
-```
-
-# MB 3.9
-
-```{r}
-data = rexp(100, 0.2)
-plot(density(data))
-```
-
-```{r}
-## 样本均值
-mean(data)
-## 总体均值为
-1/0.2
-## 相差
-mean(data) - 1/0.2
-```
-
-# MB 3.11
-
-```{r}
-data <- c(87, 53, 72, 90, 78, 85, 83)
-## 样本均值
-mean(data)
-## 样本方差
-var(data)
-```
-
-对于poisson分布
-```{r}
-x <- rpois(7, 78.3)
-mean(x)
-var(x)
-```
-比较均值和方差可以看出，两者非常接近，所以采用$\lambda = 78.3$的poisson分布能够很好地模拟这些样本数据。
-
-# MB 3.13
-
-```{r}
-Pb = matrix(c(0.6, 0.2, 0.2, 
-              0.2, 0.4, 0.4,
-              0.4, 0.3, 0.3), 3, 3, byrow = TRUE)
-```
-
-题中给出的平稳分布不满足$\pi P = \pi$，而且矩阵Pb不可逆，则其给出的理论平稳分布并不对。
-
-## (a)
-
-编写Markov(n, start, transition) 函数，其中n是生成的Markov链的长度，start是初始状态，transition为转移矩阵，返回值是每次访问的状态，由此可以统计每个状态访问的次数。
-
-```{r}
-Markov <- function(n, start = 0, transition)
-{
-  ## states: 0 1 2 ... size-1
-  size = dim(transition)[1]
-  p0 = numeric(size)
-  p0[start + 1] = 1
-  p = t(p0)
-  res = c(n)
-  for (i in 1:n)
-  {
-    p = p %*% Pb
-    # 产生[0,1]随机数
-    r = runif(1, 0, sum(p))
-    pp = cumsum(p)
-    res[i] = which(r < pp)[1] - 1
+    lm.litters <- lm(brainwt ~ bodywt + lsize, data = litters[Bsample[,i], ])
+    ridge.litters.min = lm.ridge(brainwt ~ bodywt + lsize, 
+                                 data = litters[Bsample[,i], ], lambda = lambda.min)
+    lambda.min = lambda[which.min(ridge.litters$GCV)]
+    ridge.litters.min = lm.ridge(brainwt ~ bodywt + lsize, 
+                                 data = litters[Bsample[,i], ], lambda = lambda.min)
+    res = rbind(res, c(coef(lm.litters) %*% c(1, 7, 10), 
+                       coef(ridge.litters.min) %*% c(1, 7, 10)))
   }
   return(res)
 }
 ```
 
+下面求B个bootstrap样本的0.025和0.975分位数，从而得到95%的置信区间。
 ```{r}
-xx = Markov(1000, 0, Pb)
-freq.tab = table(xx)
-dimnames(freq.tab) = list(xx = c("sun", "cloud", "rain"))
-prop.table(freq.tab)
+bootstrap.res = bootstrap.litter(1000, 123)
+q.res = apply(bootstrap.res, 2, function(x) quantile(x, c(0.025, 0.975)))
+q.res
 ```
 
-## (b)
-
+于是通过bootstrap求得的最小二乘回归的95%置信区间为$[0.4058261, 0.4231659]$，岭回归的95%置信区间为$[0.4043712, 0.4222348]$。而通过predict.lm求得的95%置信区间为$[0.4062582, 0.4243312]$，
 ```{r}
-library(zoo)
-plotmarkov <-
-  function(n=10000, start=0, window=100, transition=Pb, npanels=5){
-    xc2 <- Markov(n, start, transition)
-    mav0 <- rollmean(as.integer(xc2==0), window)
-    mav1 <- rollmean(as.integer(xc2==0), window)
-    npanel <- cut(1:length(mav0), breaks=seq(from=1, to=length(mav0),
-                                             length=npanels+1),
-                  include.lowest=TRUE)
-    df <- data.frame(av0=mav0, av1=mav1, x=1:length(mav0),
-                     gp=npanel)
-    print(xyplot(av0+av1  ~ x | gp, data=df, layout=c(1,npanels),
-                 type="l", par.strip.text=list(cex=0.65),
-                 scales=list(x=list(relation="free"))))
-}
+predict.lm(lm.litters, data.frame(lsize=10, bodywt = 7), interval = "confidence")
 ```
 
+值得说明的是，predict.lm没有针对ridgelm的方法，故无法计算，只能比较最小二乘估计的bootstrap方法和predict.lm方法的置信区间。
+
+
+# MDL Chapter 14 Worksheet B: Study of intima media
+
+
+
+下载数据
 ```{r}
-plotmarkov(n = 100000, start = 0, window = 100, transition = Pb, npanels = 5)
+library(XLConnect)
+tmp = tempfile(fileext = ".xls")
+download.file(url = "http://biostatisticien.eu/springeR/Intima_Media_Thickness.xls", 
+              destfile = tmp, mode = "wb")
+connect =  loadWorkbook(tmp)
+data = readWorksheet(connect, 1)
+```
+注意到每次tobacco取值为0（表明为非吸烟者）时，则packyear值为NA（表示每年香烟的盒数），所以很自然地可以将packyear的NA换成0。
+```{r}
+data$packyear[is.na(data$packyear)] <-0
 ```
 
-因给出的转移矩阵不可逆，该问题的平稳性问题无法回答，但是可以看出通过改变window的大小对图像会有一些影响。
-
-# MDL Chapter 10 Worksheet A
-
+并且计算BMI
 ```{r}
-A = matrix(c(2, 5,
-             3, 4), 2, 2, byrow = T)
-I = matrix(c(1, 0,
-             0, 1), 2, 2)
+data = within(data, {
+  BMI = weight/(height/100)^2
+})
 ```
 
-## Problem 10.1
+## Problem 14.1
 
 ```{r}
-myf <- function(x)
-{
-  return(det(A-x*I))
-}
+pairs(data)
 ```
 
-## Pronlem 10.2
+从散点图矩阵可以看出，height和weight可能存在多重共线性，BMI和weight可能存在多重共线性，因为它们两两间有较大的线性关系。
+
+## Problem 14.2
 
 ```{r}
-myf <- function(x)
-{
-  res = sapply(x, function(xx) det(A-xx*I))
-  return(res)
-}
+lm.age <- lm(measure~AGE, data)
+summary(lm.age)
+```
+measure和SPORT的回归模型为
+```{r}
+lm.sport <- lm(measure~SPORT, data)
+summary(lm.sport)
+```
+measure和alcohol的回归模型为
+```{r}
+lm.alcohol <- lm(measure~alcohol, data)
+summary(lm.alcohol)
+```
+measure和packyear的回归模型为
+```{r}
+lm.packyear <- lm(measure~packyear, data)
+summary(lm.packyear)
+```
+measure 和BMI的回归模型为
+```{r}
+lm.BMI <- lm(measure~BMI, data)
+summary(lm.BMI)
 ```
 
-## Problem 10.3
+## Problem 14.3
+
+  上问中p<0.25的变量有AGE、alcohol、packyear和BMI
+
 
 ```{r}
-xrange = pretty(c(-10, 10), 200)
-Px = myf(xrange)
-plot(xrange, Px, xlab = "x", ylab = "P(x)")
-abline(h = 0)
+lm.age.packyear <- lm(measure~AGE*packyear, data)
+summary(lm.age.packyear)
 ```
-
-## Problem 10.4
-
-由上图可以看出两个根位于$[-5,0]$和$[5, 10]$中
-
 ```{r}
-root1 = uniroot(myf, interval = c(-5, 0))$root
-root2 = uniroot(myf, interval = c(5, 10))$root
-c(root1, root2)
+lm.alcohol.packyear <- lm(measure~alcohol*packyear, data)
+summary(lm.alcohol.packyear)
 ```
-则两个根为-1.0和7.0
+```{r}
+lm.BMI.packyear <- lm(measure~BMI*packyear, data)
+summary(lm.BMI.packyear)
+```
 
-## Problem 10.5
+## Problem 14.4
 
+25%显著的单变量有AGE、alcohol、packyear和BMI，10%显著的交叉变量有alcohol\*packyear
+
+则模型为
+```{r}
+lm.all <- lm(measure~AGE+alcohol*packyear+BMI, data)
+summary(lm.all)
+```
+
+## Problem 14.5
+由上述summary的结果可以看出，此时交叉项不再显著，则除掉交叉项为
+```{r}
+lm.all2 <- lm(measure~AGE+alcohol+packyear+BMI, data)
+summary(lm.all2)
+```
+
+## Problem 14.6
+由上述summary结果知alcohol和packyear不再显著，删掉alcohol有
+```{r}
+lm.all2.rm.alcohol <- lm(measure~AGE+packyear+BMI, data)
+summary(lm.all2.rm.alcohol)
+```
+
+虽然此时packyear也不显著，但题目要求不能改变与tobacco有关的变量，及不能改变packyear的变量，故保留。
+
+## Problem 14.7
+最终模型是
 $$
-P(x) = x^2-6x-7
+\text{measure} \sim \text{AGE} + \text{BMI} + \text{packyear}
 $$
+并且注意到，无论packyear的值为多少，measure总会随着AGE和BMI的增大而增大。
 
-```{r}
-polyroot(c(-7, -6, 1))
-```
 
-计算得到根为-1和7.
-
-## Problem 10.6
-
-```{r}
-eigen(A)
-```
-特征值为7和-1， 与前面两问的结果都一致。
-
-# MDL Chapter 12 Worksheet B 
-
-## Problem 12.1
-
-```{r}
-rgp <- function(n, mu, sigma, xi)
-{
-   U = runif(n, 0, 1)
-   X = mu + sigma*(U^{-xi}-1)/xi
-   return(X)
-}
-```
-
-## Problem 12.2
-
-```{r}
-data = rgp(1000, 0, 1, 1/4)
-head(data)
-```
-
-## Problem 12.3
-
-```{r}
-## empirical mean and variance
-empirical.mean = mean(data)
-empirical.var = var(data)
-c(empirical.mean, empirical.var)
-```
-
-## Problem 12.4
-
-```{r}
-## theoretical values
-theoretical.mean = 0 + 1/(1-1/4)
-theoretical.var = 1^2/((1-1/4)^2*(1-2*1/4))
-c(theoretical.mean, theoretical.var)
-```
-
-## Problem 12.5
-
-```{r}
-data = rgp(10000, 0, 1, 1/4)
-## empirical mean and variance
-empirical.mean = mean(data)
-empirical.var = var(data)
-c(empirical.mean, empirical.var)
-```
-
-## Problem 12.6
-
-采用上一问中$n=10000$的样本
-
-```{r}
-hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
-```
-
-## Problem 12.7
-
-```{r}
-hist(data, freq = F, col = "red", xlim = c(0, 10), nclass = 500)
-lines(density(data), col = "blue")
-```
