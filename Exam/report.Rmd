@@ -1,0 +1,254 @@
+---
+title: "短学期上机考试"
+author: "汪利军 3140105707"
+date: "July 11, 2017"
+fontsize: 12pt
+output: 
+  pdf_document:
+    includes:
+      in_header: ../header_zh.tex
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+---
+
+\clearpage
+
+# 六
+
+```{r}
+before = c(57, 54, 62, 64, 71, 65, 70, 75, 68, 70, 77, 74, 80, 83)
+after = c(55, 60, 68, 69, 70, 73, 74, 74, 75, 76, 76, 78, 81, 90)
+t.test(before, after, paired = TRUE)
+```
+
+由上述t检验结果可以看出，p值为0.002707<0.05，也就是拒绝原假设，故alcohol对reflexes有效果。
+
+# 七
+
+首先构造数据如下所示
+
+```{r}
+A25.34 <- c(22, 9, 22, 29, 16, 28, 48, 7, 8, 26, 4, 28, 22, 10, 20)
+A35.44 <- c(27, 19, 19, 40, 25, 35, 65, 8, 11, 29, 7, 41, 34, 13, 22)
+A45.54 <- c(31, 10, 21, 52, 36, 41, 84, 11, 18, 36, 10, 46, 41, 15, 28)
+A55.64 <- c(34, 14, 31, 53, 47, 49, 81, 18, 20, 32, 16, 51, 50, 17, 33)
+A65.74 <- c(24, 27, 49, 69, 56, 52, 107, 27, 28, 28, 22, 35, 51, 22, 37)
+df <- data.frame(A25.34, A35.44, A45.54, A55.64, A65.74)
+rownames(df) <- c("Canada", "Israel", "Japan", "Austria", "France", 
+                  "Germany", "Hungary", "Italy", "Netherlands", "Poland",
+                  "Spain", "Sweden", "Switzerland", "UK", "USA")
+```
+
+首先对数据框进行转换，然后进一步绘出箱线图
+
+```{r}
+df.stack = stack(df)
+boxplot(values~ind, data = df.stack, main = "Boxplot of Mortality Rates", 
+        xlab = "Age Groups", ylab = "Mortality Rates")
+```
+
+从箱线图可以看出，不同年龄群的Mortality Rates有差异，其均值随着年龄的增长而增大。
+
+# 八
+
+## (a)
+
+重复$n$次实验，点$(x_1,x_2)$到最近边的距离小于0.25的个数为$m_1$，则估计的概率为
+$$
+p(\text{the distance between }(x_1, x_2) \text{ and the nearest edge}) = \frac{m_1}{n}
+$$
+
+编写simPoints(n)函数返回生成的n个随机点。
+```{r}
+simPoints <- function(n)
+{
+  x1 = runif(n)
+  x2 = runif(n)  
+  return(data.frame(x1, x2))
+}
+```
+
+编写isNeareastPointToEdge(x)函数来判断输入的x点是否离最近边的距离小于0.25，若是，则返回TRUE，否则返回FALSE。
+```{r}
+isNeareastPointToEdge <- function(x)
+{
+  # 点x到四条边的距离
+  dist = sapply(x, function(y) c(y, 1-y))
+  # 点x到四条边最近的距离
+  dist.min = min(dist)
+  # 若小于0.25，返回TRUE
+  if (dist.min < 0.25)
+    return(TRUE)
+  else
+    return(FALSE)
+}
+```
+
+统计满足条件的点的个数
+
+
+```{r}
+n = 1000
+x <- simPoints(n)
+x.near.edge <- apply(x, 1, function(y) isNeareastPointToEdge(y))
+m1 = sum(x.near.edge)
+```
+
+则概率为
+```{r}
+m1/n
+```
+
+## (b)
+
+重复$n$次实验，点$(x_1,x_2)$到最近点的距离小于0.25的个数为$m_2$，则估计的概率为
+$$
+p(\text{the distance between }(x_1, x_2) \text{ and the nearest vertex}) = \frac{m_2}{n}
+$$
+
+编写函数isNeareastPointToVertex(x)，判断该点是否离最近顶点的距离小于0.25，若是，则返回TRUE，否则返回FALSE。
+
+```{r}
+isNeareastPointToVertex <- function(x)
+{
+  # 点x到四个顶点的距离
+  dist = c(sqrt(x[1]^2+x[2]^2),
+           sqrt((x[1]-1)^2+x[2]^2),
+           sqrt(x[1]^2+(x[2]-1)^2),
+           sqrt((x[1]-1)^2+(x[2]-1)^2))
+  # 点x到四个顶点最近的距离
+  dist.min = min(dist)
+  # 若小于0.25，返回TRUE
+  if (dist.min < 0.25)
+    return(TRUE)
+  else
+    return(FALSE)
+}
+```
+
+统计满足条件的点的个数
+
+```{r}
+x.near.vertex <- apply(x, 1, function(y) isNeareastPointToVertex(y))
+m2 = sum(x.near.vertex)
+```
+
+则概率为
+```{r}
+m2/n
+```
+
+# 九
+
+## (a)
+
+```{r}
+ChickWeight.split = with(ChickWeight, split(ChickWeight, Chick))
+```
+
+提取出Chick为34的数据
+```{r}
+ChickWeight.chick34 <- ChickWeight.split$`34`
+ChickWeight.chick34
+```
+
+然后作图
+```{r}
+plot(weight ~ Time, data = ChickWeight.chick34, type = "o")
+```
+
+## (b)
+
+首先提取出diet group 为4的数据
+```{r}
+ChickWeight.split.diet = with(ChickWeight, split(ChickWeight, Diet))
+ChickWeight.diet4 <- ChickWeight.split.diet$`4`
+head(ChickWeight.diet4)
+```
+
+```{r}
+boxplot(weight ~ Time, data = ChickWeight.diet4,
+        xlab = "Time", ylab = "weight", main = "Boxplot for Diet Group 4")
+```
+
+## (c)
+
+计算每个时间点weight的均值
+
+```{r}
+ChickWeight.diet4.mean <- with(ChickWeight.diet4, 
+                               aggregate(weight, by = list(Time), mean))
+colnames(ChickWeight.diet4.mean) <- c("Time", "weight")
+ChickWeight.diet4.mean
+```
+
+作出weight的均值关于时间的图象
+```{r}
+plot(weight~Time, data = ChickWeight.diet4.mean, type = "o",
+     main = "Mean Weight Against Time")
+```
+
+## (d)
+
+首先提取group 2的数据
+```{r}
+ChickWeight.diet2 <- ChickWeight.split.diet$`2`
+ChickWeight.diet2.mean <- with(ChickWeight.diet2, 
+                               aggregate(weight, by = list(Time), mean))
+colnames(ChickWeight.diet2.mean) <- c("Time", "weight")
+```
+
+再向图中添加group 2的图象
+```{r}
+plot(weight~Time, data = ChickWeight.diet4.mean, type = "o",
+     main = "Mean Weight Against Time")
+with(ChickWeight.diet2.mean, points(Time, weight, col = "red", type="o"))
+```
+
+## (e)
+
+在左上角添加legend，效果如下所示
+```{r}
+plot(weight~Time, data = ChickWeight.diet4.mean, type = "o",
+     main = "Mean Weight Against Time")
+with(ChickWeight.diet2.mean, points(Time, weight, col = "red", type="o"))
+legend("topleft", c("Group 2", "Group 4"), lty = c(1, 1), 
+       pch = c(1, 1), col = c("red", "black"))
+```
+
+# 十
+
+首先构造数据框
+```{r}
+time = c(2, 3, 6, 8, 9, 10, 11, 13, 14, 16, 21, 22, 24, 26, 27, 7,
+         13, 15, 18, 23, 20, 24, 1, 5, 17, 18, 25, 18, 25, 4, 19)
+tumorsize = c(rep("<=3cm", 22), rep(">3cm", 9))
+number = c(rep(1, 15), rep(2, 5), 3, 4, rep(1, 5), 2, 2, 3, 4)
+df = data.frame(time, tumorsize, number)
+```
+
+因tumorsize仅取两个值，则将其看成因子然后进行下面的下面的Poisson回归
+```{r}
+model <- glm(number ~ time + factor(tumorsize), data = df, family = "poisson")
+```
+
+结果为
+```{r}
+summary(model)
+```
+
+可以看出tumorsize的系数为0.20511，在泊松回归中,因变量以条件均值的对数形式$ln(\lambda)$来建模，则tumorsize变大，number的对数均值将增加0.20511，然而该系数的p值为0.503>0.05，不够显著。
+
+
+如果不考虑时间，采用下面的Poisson回归，
+```{r}
+model2 <- glm(number ~ factor(tumorsize), data = df, family = "poisson")
+```
+
+结果为
+```{r}
+summary(model2)
+```
+
+可以看出tumorsize的系数为0.2007， 在泊松回归中,因变量以条件均值的对数形式$ln(\lambda)$来建模，则tumorsize变大，number的对数均值将增加0.2007，然而该系数的p值为0.512>0.05，表明该系数的估计不够显著。
